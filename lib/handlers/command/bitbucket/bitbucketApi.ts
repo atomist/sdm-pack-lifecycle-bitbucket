@@ -96,7 +96,7 @@ class BitbucketApiImpl implements BitbucketApi {
     }
 
     private getBase64AuthHeaderValue(auth: BitbucketAuth): string {
-        return btoa(`${auth.username}:${auth.password}`);
+        return Buffer.from(`${auth.username}:${auth.password}`).toString("base64");
     }
 
     public async deleteBranch(project: string, repo: string, branchName: string): Promise<EmptyResult> {
