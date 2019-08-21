@@ -119,6 +119,7 @@ export class PullRequestActionContributor extends AbstractIdentifiableContributi
                             },
                             "RaiseBitbucketPullRequest", {
                                 org: repo.owner,
+                                owner: repo.owner,
                                 repo: repo.name,
                                 title: msg[0],
                                 body: (msg.length > 1) ?  msg.slice(1).join("\n").split("\r\n").join("\n").split("\r").join("") : "",

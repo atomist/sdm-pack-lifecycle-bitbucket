@@ -91,9 +91,6 @@ export class MergeBitbucketPullRequest implements HandleCommand {
     @MappedParameter(MappedParameters.GitHubApiUrl)
     public apiUrl: string;
 
-    @Secret(Secrets.userToken("repo"))
-    public githubToken: string;
-
     public async handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
         const api = bitbucketApi(this.apiUrl, auth);

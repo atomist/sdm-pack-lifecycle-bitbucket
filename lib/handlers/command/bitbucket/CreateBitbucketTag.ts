@@ -88,15 +88,6 @@ export class CreateBitbucketTag implements HandleCommand {
     @MappedParameter(MappedParameters.GitHubApiUrl)
     public apiUrl: string;
 
-    @MappedParameter(MappedParameters.SlackUser, false)
-    public requester: string;
-
-    @MappedParameter(MappedParameters.SlackTeam, false)
-    public teamId: string;
-
-    @Secret(Secrets.userToken("repo"))
-    public githubToken: string;
-
     public handle(ctx: HandlerContext): Promise<HandlerResult> {
         const tagger = {
             name: "Atomist Bot",

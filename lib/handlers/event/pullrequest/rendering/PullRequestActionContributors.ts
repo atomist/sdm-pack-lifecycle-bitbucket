@@ -51,9 +51,10 @@ export class MergeActionContributor extends AbstractIdentifiableContribution
             { text: "Merge", role: "global" },
             "MergeBitbucketPullRequest",
             {
+                org: repo.owner,
+                owner: repo.owner,
                 pr: pr.number,
                 repo: repo.name,
-                owner: repo.owner,
                 title: `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`,
                 message: `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`,
                 sha: pr.head.sha,
@@ -104,7 +105,7 @@ export class DeleteActionContributor extends AbstractIdentifiableContribution
         const buttons = [];
 
         if (context.rendererId === "pull_request") {
-            buttons.push(buttonForCommand({text: "Delete Branch", role: "global"}, "DeleteGitHubBranch",
+            buttons.push(buttonForCommand({text: "Delete Branch", role: "global"}, "DeleteBitbucketBranch",
                 {branch: pr.branch.name, repo: repo.name, owner: repo.owner}));
         }
 

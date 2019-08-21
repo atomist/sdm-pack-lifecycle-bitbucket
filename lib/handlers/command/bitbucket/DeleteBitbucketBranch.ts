@@ -52,9 +52,6 @@ export class DeleteBitbucketBranch implements HandleCommand {
     @MappedParameter(MappedParameters.GitHubApiUrl)
     public apiUrl: string;
 
-    @Secret(Secrets.userToken("repo"))
-    public githubToken: string;
-
     public handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
         return bitbucketApi(this.apiUrl, auth)
