@@ -71,8 +71,8 @@ interface BitbucketApiOptions {
 }
 
 class BitbucketApiImpl implements BitbucketApi {
-    private apiOptions: BitbucketApiOptions;
-    private httpClient: HttpClient;
+    private readonly apiOptions: BitbucketApiOptions;
+    private readonly httpClient: HttpClient;
 
     constructor(apiOptions: BitbucketApiOptions) {
         this.apiOptions = apiOptions;
