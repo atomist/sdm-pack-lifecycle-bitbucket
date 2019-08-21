@@ -42,7 +42,7 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
     branch: {
         chat: {
             actions: [
-                (repo: BranchFields.Repo) => repo.org.provider === "bitbucket" ? [
+                (repo: BranchFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
                     new RaisePrActionContributor(),
                 ] : [],
             ],
@@ -51,14 +51,14 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
     pullRequest: {
         chat: {
             actions: [
-                (repo: PullRequestFields.Repo) => repo.org.provider === "bitbucket" ? [
+                (repo: PullRequestFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
                     new pra.MergeActionContributor(),
                 ] : [],
             ],
         },
         web: {
             actions: [
-                (repo: PullRequestFields.Repo) => repo.org.provider === "bitbucket" ? [
+                (repo: PullRequestFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
                     new CardActionContributorWrapper(new pra.MergeActionContributor()),
                 ] : [],
             ],
@@ -67,7 +67,7 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
     push: {
         chat: {
             actions: [
-                (push: PushToPushLifecycle.Push) => push.repo.org.provider === "bitbucket" ? [
+                (push: PushToPushLifecycle.Push) => push.repo.org.provider.providerType === "bitbucket" ? [
                     new pa.PullRequestActionContributor(),
                     new pa.ApproveGoalActionContributor(),
                     new pa.CancelGoalSetActionContributor(),
@@ -78,7 +78,7 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
         },
         web: {
             actions: [
-                (push: PushToPushLifecycle.Push) => push.repo.org.provider === "bitbucket" ? [
+                (push: PushToPushLifecycle.Push) => push.repo.org.provider.providerType === "bitbucket" ? [
                     new CardActionContributorWrapper(new pa.PullRequestActionContributor()),
                     new CardActionContributorWrapper(new pa.ApproveGoalActionContributor()),
                     new CardActionContributorWrapper(new pa.CancelGoalSetActionContributor()),
