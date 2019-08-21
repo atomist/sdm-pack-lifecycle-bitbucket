@@ -112,7 +112,7 @@ export class PullRequestActionContributor extends AbstractIdentifiableContributi
 
                     if (showButton) {
                         const msg = node.after.message.split("\n");
-                        let body;
+                        let body = "";
                         if (msg.length > 1) {
                             body = msg.slice(1).join("\n").split("\r\n").join("\n").split("\r").join("");
                         }

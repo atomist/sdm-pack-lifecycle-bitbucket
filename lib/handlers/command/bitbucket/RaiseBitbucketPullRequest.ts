@@ -68,14 +68,8 @@ export class RaiseBitbucketPullRequest implements HandleCommand {
     @MappedParameter(MappedParameters.GitHubOwner)
     public owner: string;
 
-    @MappedParameter(MappedParameters.SlackTeam, false)
-    public teamId: string;
-
     @MappedParameter(MappedParameters.GitHubApiUrl)
     public apiUrl: string;
-
-    @Secret(Secrets.userToken("repo"))
-    public githubToken: string;
 
     public handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
