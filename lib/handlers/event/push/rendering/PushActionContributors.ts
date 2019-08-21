@@ -112,21 +112,16 @@ export class PullRequestActionContributor extends AbstractIdentifiableContributi
 
                     if (showButton) {
                         const msg = node.after.message.split("\n");
-                        let body = "";
-                        if (msg.length > 1) {
-                            body = msg.slice(1).join("\n").split("\r\n").join("\n").split("\r").join("");
-                        }
-
                         buttons.push(buttonForCommand(
                             {
                                 text: "Raise PR",
                                 role: "global",
                             },
                             "RaiseBitbucketPullRequest", {
-                                owner: repo.owner,
+                                org: repo.owner,
                                 repo: repo.name,
                                 title: msg[0],
-                                body,
+                                body: (msg.length > 1) ?  msg.slice(1).join("\n").split("\r\n").join("\n").split("\r").join("") : "",
                                 base: node.repo.defaultBranch,
                                 head: node.branch,
                             }));
