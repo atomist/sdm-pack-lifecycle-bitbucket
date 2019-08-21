@@ -30,8 +30,8 @@ import { ConfigurableCommandHandler } from "@atomist/automation-client/lib/decor
 import { HandleCommand } from "@atomist/automation-client/lib/HandleCommand";
 import { slackWarningMessage } from "@atomist/sdm";
 import {
-    BitbucketApi,
     bitbucketApi,
+    BitbucketApi,
     getBitbucketAuth,
     handleError,
 } from "./bitbucketApi";
