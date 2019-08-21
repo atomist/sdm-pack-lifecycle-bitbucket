@@ -105,12 +105,12 @@ export class CreateBitbucketTag implements HandleCommand {
         };
         const auth = getBitbucketAuth();
 
-        return bitbucketApi(this.apiUrl, auth).createTag(this.owner,
-            this.repo,
-            {
-            tagName: this.tag,
-            message: this.message || "Tag created by Atomist Lifecycle Automation",
-            sha: this.sha,
+        return bitbucketApi(this.apiUrl, auth).createTag({
+                project: this.owner,
+                repo: this.repo,
+                tagName: this.tag,
+                message: this.message || "Tag created by Atomist Lifecycle Automation",
+                sha: this.sha,
             })
             .then(() => {
                 if (this.msgId) {

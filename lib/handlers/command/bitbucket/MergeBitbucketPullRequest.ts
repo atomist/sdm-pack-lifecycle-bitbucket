@@ -98,7 +98,7 @@ export class MergeBitbucketPullRequest implements HandleCommand {
         const auth = getBitbucketAuth();
         const api = bitbucketApi(this.apiUrl, auth);
         if (await this.canMerge(this.project, this.repo, this.pr, api)) {
-            return api.mergePR(this.project, this.repo, this.pr)
+            return api.mergePR({project: this.project, repo: this.repo, pr: this.pr})
                 .catch((err: any) => {
                 return handleError("Merge Pull Request", err, ctx);
             })
@@ -111,6 +111,6 @@ export class MergeBitbucketPullRequest implements HandleCommand {
     }
 
     private async canMerge(project: string, repo: string, pr: number, api: BitbucketApi): Promise<boolean> {
-        return api.canPRBeMerged(project, repo, pr);
+        return (await api.canPRBeMerged({project, repo, pr})).result;
     }
 }

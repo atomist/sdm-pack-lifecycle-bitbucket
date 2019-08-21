@@ -28,29 +28,47 @@ import {
 } from "@atomist/automation-client";
 import { slackErrorMessage } from "@atomist/sdm";
 
-export interface EmptyResult {
-    httpCode: number;
+export interface ApiResult<T> {
+    httpCode?: number;
+    result?: T;
 }
 
-export interface BitbucketApi {
-    deleteBranch(project: string, repo: string, branchName: string): Promise<EmptyResult>;
-    mergePR(project: string, repo: string, pr: number): Promise<EmptyResult>;
-    canPRBeMerged(project: string, repo: string, pr: number): Promise<boolean>;
-    raisePR(project: string, repo: string, prContent: PrContent): Promise<number>;
-    createTag(project: string, repo: string, tagOptions: TagOptions): Promise<EmptyResult>;
+export interface BaseApiRequest {
+    project: string;
+    repo: string;
 }
 
-export interface TagOptions {
+export interface DeleteBranchRequest extends BaseApiRequest {
+    branchName: string;
+}
+
+export interface MergePRRequest extends BaseApiRequest {
+    pr: number;
+}
+
+export interface CanPRBeMergedRequest extends BaseApiRequest {
+    pr: number;
+}
+
+export interface RaisePRRequest extends BaseApiRequest {
+    title: string;
+    body: string;
+    origin: string;
+    target: string;
+}
+
+export interface CreateTagRequest extends BaseApiRequest {
     tagName: string;
     sha: string;
     message: string;
 }
 
-export interface PrContent {
-    title: string;
-    body: string;
-    origin: string;
-    target: string;
+export interface BitbucketApi {
+    deleteBranch(request: DeleteBranchRequest): Promise<ApiResult<void>>;
+    mergePR(request: MergePRRequest): Promise<ApiResult<void>>;
+    canPRBeMerged(request: CanPRBeMergedRequest): Promise<ApiResult<boolean>>;
+    raisePR(request: RaisePRRequest): Promise<ApiResult<number>>;
+    createTag(request: CreateTagRequest): Promise<ApiResult<void>>;
 }
 
 export interface BitbucketAuth {
@@ -79,30 +97,14 @@ class BitbucketApiImpl implements BitbucketApi {
         this.httpClient = configurationValue<HttpClientFactory>("http.client.factory").create(apiOptions.apiUrl);
     }
 
-    public async addCommentToPR(project: string, repo: string, pr: string, comment: string): Promise<EmptyResult> {
-        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${project}/repos/${repo}/pull-requests/${pr}/comments`;
-        const body = {
-            text: comment,
-        };
-        return this.httpClient.exchange(urlPattern, {
-            body,
-            method: HttpMethod.Post,
-            headers: {
-                Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
-            },
-        })
-            .then(response => Promise.resolve({ httpCode: response.status}))
-            .catch(reason => Promise.reject(reason));
-    }
-
     private getBase64AuthHeaderValue(auth: BitbucketAuth): string {
         return Buffer.from(`${auth.username}:${auth.password}`).toString("base64");
     }
 
-    public async deleteBranch(project: string, repo: string, branchName: string): Promise<EmptyResult> {
-        const urlPattern = `${this.apiOptions.apiUrl}rest/branch-utils/1.0/projects/${project}/repos/${repo}/branches`;
+    public async deleteBranch(r: DeleteBranchRequest): Promise<ApiResult<void>> {
+        const urlPattern = `${this.apiOptions.apiUrl}rest/branch-utils/1.0/projects/${r.project}/repos/${r.repo}/branches`;
         const body = {
-            name: `refs/heads/${branchName}`,
+            name: `refs/heads/${r.branchName}`,
             dryRun: false,
         };
         return this.httpClient.exchange(urlPattern, {
@@ -116,10 +118,10 @@ class BitbucketApiImpl implements BitbucketApi {
             .catch(reason => Promise.reject(reason));
     }
 
-    public async mergePR(project: string, repo: string, pr: number): Promise<EmptyResult> {
-        const version = await this.getPRVersion(project, repo, pr);
-        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${project}/repos/${repo}/pull-requests/${pr}/merge?version=${version}`;
-        return this.httpClient.exchange(urlPattern, {
+    public async mergePR(r: MergePRRequest): Promise<ApiResult<void>> {
+        const version = await this.getPRVersion(r.project, r.repo, r.pr);
+        const url = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${r.project}/repos/${r.repo}/pull-requests/${r.pr}/merge?version=${version}`;
+        return this.httpClient.exchange(url, {
             method: HttpMethod.Post,
             headers: {
                 Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
@@ -129,7 +131,7 @@ class BitbucketApiImpl implements BitbucketApi {
             .catch(reason => Promise.reject(reason));
     }
 
-    public async getPRVersion(project: string, repo: string, pr: number): Promise<number> {
+    private async getPRVersion(project: string, repo: string, pr: number): Promise<ApiResult<number>> {
         const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${project}/repos/${repo}/pull-requests/${pr}`;
         return this.httpClient.exchange(urlPattern, {
             method: HttpMethod.Get,
@@ -137,33 +139,35 @@ class BitbucketApiImpl implements BitbucketApi {
                 Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
             },
         })
-            .then(response => Promise.resolve((response.body as any).version))
+            .then(response => Promise.resolve({
+                httpCode: response.status,
+                result: (response.body as any).version }))
             .catch(reason => Promise.reject(reason));
     }
 
-    public async raisePR(project: string, repo: string, prContent: PrContent): Promise<number> {
-        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${project}/repos/${repo}/pull-requests`;
+    public async raisePR(r: RaisePRRequest): Promise<ApiResult<number>> {
+        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${r.project}/repos/${r.repo}/pull-requests`;
         const body = {
-            title: prContent.title,
-            description: prContent.body,
+            title: r.title,
+            description: r.body,
             state: "OPEN",
             open: true,
             closed: false,
             fromRef: {
-                id: `refs/heads/${prContent.origin}`,
+                id: `refs/heads/${r.origin}`,
                 repository: {
-                    slug: repo,
+                    slug: r.repo,
                     project: {
-                        key: project,
+                        key: r.project,
                     },
                 },
             },
             toRef: {
-                id: `refs/heads/${prContent.target}`,
+                id: `refs/heads/${r.target}`,
                 repository: {
-                    slug: repo,
+                    slug: r.repo,
                     project: {
-                        key: project,
+                        key: r.project,
                     },
                 },
             },
@@ -176,24 +180,39 @@ class BitbucketApiImpl implements BitbucketApi {
                 Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
             },
         })
-            .then(response => Promise.resolve((response as any).id))
+            .then(response => Promise.resolve({result: (response as any).id}))
             .catch(reason => Promise.reject(reason));
     }
 
-    public async canPRBeMerged(project: string, repo: string, pr: number): Promise<boolean> {
-        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${project}/repos/${repo}/pull-requests/${pr}/merge`;
+    public async canPRBeMerged(r: CanPRBeMergedRequest): Promise<ApiResult<boolean>> {
+        const urlPattern = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${r.project}/repos/${r.repo}/pull-requests/${r.pr}/merge`;
         return this.httpClient.exchange(urlPattern, {
             method: HttpMethod.Get,
             headers: {
                 Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
             },
         })
-            .then(response => Promise.resolve((response.body as any).canMerge))
+            .then(response => Promise.resolve({httpCode: response.status, result: (response.body as any).canMerge}))
             .catch(reason => Promise.reject(reason));
     }
 
-    public async createTag(project: string, repo: string, tagOptions: TagOptions): Promise<EmptyResult> {
-        return undefined;
+    public async createTag(r: CreateTagRequest): Promise<ApiResult<void>> {
+        const urlPattern = `${this.apiOptions.apiUrl}rest/git/1.0/projects/${r.project}/repos/${r.repo}/tags`;
+        const body = {
+            message: `${r.message}`,
+            name: r.tagName,
+            startPoint: r.sha,
+            type: "ANNOTATED",
+        };
+        return this.httpClient.exchange(urlPattern, {
+            method: HttpMethod.Post,
+            body,
+            headers: {
+                Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
+            },
+        })
+            .then(response => Promise.resolve({httpCode: response.status}))
+            .catch(reason => Promise.reject(reason));
     }
 }
 

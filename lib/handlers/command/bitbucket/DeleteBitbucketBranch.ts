@@ -58,10 +58,11 @@ export class DeleteBitbucketBranch implements HandleCommand {
     public handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
         return bitbucketApi(this.apiUrl, auth)
-            .deleteBranch(this.owner,
-                          this.repo,
-                `heads/${this.branch.trim()}`,
-            ).then(() => Success)
+            .deleteBranch({
+                project: this.owner,
+                repo: this.repo,
+                branchName: `heads/${this.branch.trim()}`,
+            }).then(() => Success)
             .catch(err => {
                 return handleError("Delete Branch or Reference", err, ctx);
             });

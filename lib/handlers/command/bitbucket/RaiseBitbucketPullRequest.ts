@@ -80,14 +80,14 @@ export class RaiseBitbucketPullRequest implements HandleCommand {
     public handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
         const api = bitbucketApi(this.apiUrl, auth);
-        return api.raisePR(this.owner,
-            this.repo,
-            {
-                title: this.title,
-                origin: this.head,
-                body: this.body,
-                target: this.base,
-            })
+        return api.raisePR({
+            project: this.owner,
+            repo: this.repo,
+            title: this.title,
+            origin: this.head,
+            body: this.body,
+            target: this.base,
+        })
             .catch(err => {
                 return handleError("Raise Pull Request", err, ctx);
             })
