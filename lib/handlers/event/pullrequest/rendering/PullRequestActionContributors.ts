@@ -20,13 +20,11 @@ import {
 import {
     AbstractIdentifiableContribution,
     graphql,
-    isGenerated,
     LifecycleActionPreferences,
     RendererContext,
     SlackActionContributor,
 } from "@atomist/sdm-pack-lifecycle";
 import { Action } from "@atomist/slack-messages";
-import * as _ from "lodash";
 
 export class MergeActionContributor extends AbstractIdentifiableContribution
     implements SlackActionContributor<graphql.PullRequestToPullRequestLifecycle.PullRequest> {
@@ -53,7 +51,7 @@ export class MergeActionContributor extends AbstractIdentifiableContribution
             { text: "Merge", role: "global" },
             "MergeBitbucketPullRequest",
             {
-                issue: pr.number,
+                pr: pr.number,
                 repo: repo.name,
                 owner: repo.owner,
                 title: `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`,
@@ -73,6 +71,43 @@ export class MergeActionContributor extends AbstractIdentifiableContribution
                 buttons.push(button);
             }
         }
+        return Promise.resolve(buttons);
+    }
+
+    public menusFor(pr: graphql.PullRequestToPullRequestLifecycle.PullRequest, context: RendererContext):
+        Promise<Action[]> {
+        return Promise.resolve([]);
+    }
+}
+
+export class DeleteActionContributor extends AbstractIdentifiableContribution
+    implements SlackActionContributor<graphql.PullRequestToPullRequestLifecycle.PullRequest> {
+
+    constructor() {
+        super(LifecycleActionPreferences.pull_request.delete.id);
+    }
+
+    public supports(node: any): boolean {
+        if (node.baseBranchName) {
+            const pr = node as graphql.PullRequestToPullRequestLifecycle.PullRequest;
+            return pr.state === "closed"
+                && !!pr.branch
+                && pr.branch.name !== (pr.repo.defaultBranch || "master");
+        } else {
+            return false;
+        }
+    }
+
+    public buttonsFor(pr: graphql.PullRequestToPullRequestLifecycle.PullRequest, context: RendererContext):
+        Promise<Action[]> {
+        const repo = context.lifecycle.extract("repo");
+        const buttons = [];
+
+        if (context.rendererId === "pull_request") {
+            buttons.push(buttonForCommand({text: "Delete Branch", role: "global"}, "DeleteGitHubBranch",
+                {branch: pr.branch.name, repo: repo.name, owner: repo.owner}));
+        }
+
         return Promise.resolve(buttons);
     }
 

@@ -34,7 +34,9 @@ import deepmerge = require("deepmerge");
 import { DeleteBitbucketBranch } from "./handlers/command/bitbucket/DeleteBitbucketBranch";
 import { MergeBitbucketPullRequest } from "./handlers/command/bitbucket/MergeBitbucketPullRequest";
 import { RaiseBitbucketPullRequest } from "./handlers/command/bitbucket/RaiseBitbucketPullRequest";
-import { RaisePrActionContributor } from "./handlers/event/branch/rendering/BranchActionContributors";
+import {
+    RaisePrActionContributor,
+} from "./handlers/event/branch/rendering/BranchActionContributors";
 import * as pra from "./handlers/event/pullrequest/rendering/PullRequestActionContributors";
 import * as pa from "./handlers/event/push/rendering/PushActionContributors";
 
@@ -47,12 +49,20 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
                 ] : [],
             ],
         },
+        web: {
+            actions: [
+                (repo: PullRequestFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
+                    new CardActionContributorWrapper(new RaisePrActionContributor()),
+                ] : [],
+            ],
+        },
     },
     pullRequest: {
         chat: {
             actions: [
                 (repo: PullRequestFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
                     new pra.MergeActionContributor(),
+                    new pra.DeleteActionContributor(),
                 ] : [],
             ],
         },
@@ -60,6 +70,7 @@ export const DefaultBitbucketLifecycleOptions: LifecycleOptions = deepmerge(Defa
             actions: [
                 (repo: PullRequestFields.Repo) => repo.org.provider.providerType === "bitbucket" ? [
                     new CardActionContributorWrapper(new pra.MergeActionContributor()),
+                    new CardActionContributorWrapper(new pra.DeleteActionContributor()),
                 ] : [],
             ],
         },

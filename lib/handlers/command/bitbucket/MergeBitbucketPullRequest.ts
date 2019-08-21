@@ -39,7 +39,7 @@ import {
 /**
  * Merge a GitHub Pull Request.
  */
-@ConfigurableCommandHandler("Merge a GitHub Pull Request", {
+@ConfigurableCommandHandler("Merge a Bitbucket Pull Request", {
     intent: ["merge bitbucket pr", "merge bitbucket pullrequest"],
     autoSubmit: true,
 })
@@ -86,7 +86,7 @@ export class MergeBitbucketPullRequest implements HandleCommand {
     public repo: string;
 
     @MappedParameter(MappedParameters.GitHubOwner)
-    public project: string;
+    public owner: string;
 
     @MappedParameter(MappedParameters.GitHubApiUrl)
     public apiUrl: string;
@@ -97,8 +97,8 @@ export class MergeBitbucketPullRequest implements HandleCommand {
     public async handle(ctx: HandlerContext): Promise<HandlerResult> {
         const auth = getBitbucketAuth();
         const api = bitbucketApi(this.apiUrl, auth);
-        if (await this.canMerge(this.project, this.repo, this.pr, api)) {
-            return api.mergePR({project: this.project, repo: this.repo, pr: this.pr})
+        if (await this.canMerge(this.owner, this.repo, this.pr, api)) {
+            return api.mergePR({project: this.owner, repo: this.repo, pr: this.pr})
                 .catch((err: any) => {
                 return handleError("Merge Pull Request", err, ctx);
             })

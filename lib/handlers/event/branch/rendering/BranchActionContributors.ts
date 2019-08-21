@@ -42,55 +42,22 @@ export class RaisePrActionContributor extends AbstractIdentifiableContribution
         const deleted = context.lifecycle.extract("deleted");
 
         if (context.rendererId === "branch" && !deleted) {
-            const handler = new RaiseBitbucketPullRequest();
-            handler.owner = node.repo.owner;
-            handler.repo = node.repo.name;
-            handler.head = node.name;
-            handler.base = node.repo.defaultBranch || "master";
-            handler.title = node.commit.message;
-            actions.push(buttonForCommand({ text: "Raise PR" }, handler));
+            const button = buttonForCommand(
+                { text: "Raise PR", role: "global" },
+                "RaiseBitbucketPullRequest",
+                {
+                    head: node.name,
+                    base: node.repo.defaultBranch || "master",
+                    repo: node.repo.name,
+                    owner: node.repo.owner,
+                    title: node.commit.message,
+                });
+            actions.push(button);
         }
         return Promise.resolve(actions);
     }
 
     public menusFor(node: graphql.BranchToBranchLifecycle.Branch, context: RendererContext): Promise<Action[]> {
-        return Promise.resolve([]);
-    }
-}
-
-export class DeleteActionContributor extends AbstractIdentifiableContribution
-    implements SlackActionContributor<graphql.PullRequestToPullRequestLifecycle.PullRequest> {
-
-    constructor() {
-        super(LifecycleActionPreferences.pull_request.delete.id);
-    }
-
-    public supports(node: any): boolean {
-        if (node.baseBranchName) {
-            const pr = node as graphql.PullRequestToPullRequestLifecycle.PullRequest;
-            return pr.state === "closed"
-                && !!pr.branch
-                && pr.branch.name !== (pr.repo.defaultBranch || "master");
-        } else {
-            return false;
-        }
-    }
-
-    public buttonsFor(pr: graphql.PullRequestToPullRequestLifecycle.PullRequest, context: RendererContext):
-        Promise<Action[]> {
-        const repo = context.lifecycle.extract("repo");
-        const buttons = [];
-
-        if (context.rendererId === "pull_request") {
-            buttons.push(buttonForCommand({text: "Delete Branch", role: "global"}, "DeleteGitHubBranch",
-                {branch: pr.branch.name, repo: repo.name, owner: repo.owner}));
-        }
-
-        return Promise.resolve(buttons);
-    }
-
-    public menusFor(pr: graphql.PullRequestToPullRequestLifecycle.PullRequest, context: RendererContext):
-        Promise<Action[]> {
         return Promise.resolve([]);
     }
 }
