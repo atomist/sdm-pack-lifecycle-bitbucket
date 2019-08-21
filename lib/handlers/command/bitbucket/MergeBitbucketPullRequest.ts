@@ -55,7 +55,7 @@ export class MergeBitbucketPullRequest implements HandleCommand {
         maxLength: 10,
         required: true,
     })
-    public pr: string;
+    public pr: number;
 
     @Parameter({
         displayName: "Commit Title",
@@ -99,7 +99,7 @@ export class MergeBitbucketPullRequest implements HandleCommand {
         const api = bitbucketApi(this.apiUrl, auth);
         if (await this.canMerge(this.project, this.repo, this.pr, api)) {
             return api.mergePR(this.project, this.repo, this.pr)
-                .catch(err => {
+                .catch((err: any) => {
                 return handleError("Merge Pull Request", err, ctx);
             })
                 .then(() => Success, failure);
@@ -110,7 +110,7 @@ export class MergeBitbucketPullRequest implements HandleCommand {
         }
     }
 
-    private async canMerge(project: string, repo: string, pr: string, api: BitbucketApi): Promise<boolean> {
+    private async canMerge(project: string, repo: string, pr: number, api: BitbucketApi): Promise<boolean> {
         return api.canPRBeMerged(project, repo, pr);
     }
 }

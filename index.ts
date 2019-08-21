@@ -14,4 +14,4 @@
  * limitations under the License.
  */
 
-export { SeedSupport } from "./lib/seed";
+export { bitbucketLifecycleSupport } from "./lib/bitbucketLifecycleSupport";
