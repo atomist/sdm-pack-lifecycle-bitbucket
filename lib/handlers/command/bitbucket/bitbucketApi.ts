@@ -119,7 +119,7 @@ class BitbucketApiImpl implements BitbucketApi {
     }
 
     public async mergePR(r: MergePRRequest): Promise<ApiResult<void>> {
-        const version = await this.getPRVersion(r.project, r.repo, r.pr);
+        const version = (await this.getPRVersion(r.project, r.repo, r.pr)).result;
         const url = `${this.apiOptions.apiUrl}rest/api/1.0/projects/${r.project}/repos/${r.repo}/pull-requests/${r.pr}/merge?version=${version}`;
         return this.httpClient.exchange(url, {
             method: HttpMethod.Post,
