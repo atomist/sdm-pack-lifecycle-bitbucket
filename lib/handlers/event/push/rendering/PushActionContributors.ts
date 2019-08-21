@@ -18,7 +18,6 @@ import {
     buttonForCommand,
     logger,
     QueryNoCacheOptions,
-    TokenCredentials,
 } from "@atomist/automation-client";
 import { ApolloGraphClient } from "@atomist/automation-client/lib/graph/ApolloGraphClient";
 import {
@@ -62,95 +61,6 @@ const RepositoryTagsQuery = `query RepositoryTags($name: String!, $owner: String
   }
 }
 `;
-
-export function sortTagsByName(tags: graphql.PushFields.Tags[]): graphql.PushFields.Tags[] {
-    return tags
-        .filter(t => t.name)
-        .sort((t1, t2) => t1.name.localeCompare(t2.name));
-}
-
-export class TagTagActionContributor extends AbstractIdentifiableContribution
-    implements SlackActionContributor<graphql.PushFields.Tags> {
-
-    constructor() {
-        super(LifecycleActionPreferences.push.tag.id);
-    }
-
-    public supports(node: any): boolean {
-        return node.release === null;
-    }
-
-    public buttonsFor(tag: graphql.PushFields.Tags, context: RendererContext): Promise<Action[]> {
-        const repo = context.lifecycle.extract("repo") as graphql.PushFields.Repo;
-        const push = context.lifecycle.extract("push") as graphql.PushToPushLifecycle.Push;
-        return this.createTagButton(tag, push, repo, context);
-    }
-
-    public menusFor(tag: graphql.PushFields.Tags, context: RendererContext): Promise<Action[]> {
-        return Promise.resolve([]);
-    }
-
-    private createTagButton(tag: graphql.PushFields.Tags,
-                            push: graphql.PushToPushLifecycle.Push,
-                            repo: graphql.PushFields.Repo,
-                            ctx: RendererContext): Promise<Action[]> {
-        if (push.branch !== repo.defaultBranch) {
-            return Promise.resolve([]);
-        }
-        // If the tag is like 0.5.32-stuff, offer to create a tag like 0.5.32
-        const version = this.versionPrefix(tag.name);
-        if (version) {
-            return ctx.context.graphClient.query<graphql.TagByName.Query, graphql.TagByName.Variables>({
-                name: "tagByName",
-                variables: {
-                    repo: repo.name,
-                    owner: repo.owner,
-                    name: version,
-                },
-                options: QueryNoCacheOptions,
-            })
-                .then(result => {
-                    const et = _.get(result, "Tag[0].name");
-                    if (!et) {
-                        if (this.isLastTagOfVersion(push, tag, version)) {
-
-                            const tagHandler = new CreateBitbucketTag();
-                            tagHandler.tag = version;
-                            tagHandler.message = push.after.message || "Tag created by Atomist Lifecycle Automation";
-                            tagHandler.sha = push.after.sha;
-                            tagHandler.repo = repo.name;
-                            tagHandler.owner = repo.owner;
-
-                            return [buttonForCommand(
-                                {
-                                    text: `Tag ${version}`,
-                                    role: "global",
-                                },
-                                tagHandler)];
-                        }
-                    }
-                    return [];
-                });
-        }
-        return Promise.resolve([]);
-    }
-
-    private versionPrefix(tagName: string): string | undefined {
-        if (semver.valid(tagName)) {
-            return `${semver.major(tagName)}.${semver.minor(tagName)}.${semver.patch(tagName)}`;
-        }
-        return undefined;
-    }
-
-    private isLastTagOfVersion(push: graphql.PushToPushLifecycle.Push,
-                               tag: graphql.PushFields.Tags,
-                               version: string): boolean {
-        const sortedTagNamesWithThisVersion = sortTagsByName(push.after.tags)
-            .filter(t => this.versionPrefix(t.name) === version)
-            .map(t => t.name);
-        return sortedTagNamesWithThisVersion.indexOf(tag.name) === (sortedTagNamesWithThisVersion.length - 1);
-    }
-}
 
 export class PullRequestActionContributor extends AbstractIdentifiableContribution
     implements SlackActionContributor<graphql.PushToPushLifecycle.Push> {

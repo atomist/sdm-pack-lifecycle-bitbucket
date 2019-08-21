@@ -49,18 +49,28 @@ export class MergeActionContributor extends AbstractIdentifiableContribution
         const repo = context.lifecycle.extract("repo");
         const buttons: Action[] = [];
 
-        if (context.rendererId === "status") {
-            const mergeButtons = this.mergePRActions(pr, repo);
+        const button = buttonForCommand(
+            { text: "Merge", role: "global" },
+            "MergeBitbucketPullRequest",
+            {
+                issue: pr.number,
+                repo: repo.name,
+                owner: repo.owner,
+                title: `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`,
+                message: `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`,
+                sha: pr.head.sha,
+            });
 
+        if (context.rendererId === "status") {
             const commits = pr.commits.filter(c => !!c.statuses && c.statuses.length > 0)
                 .sort((c1, c2) => (c2.timestamp || "0").localeCompare(c1.timestamp));
             if (commits.length > 0) {
                 const commit = commits[0];
                 if (!commit.statuses.some(s => s.state !== "success")) {
-                    buttons.push(...mergeButtons);
+                    buttons.push(button);
                 }
             } else {
-                buttons.push(...mergeButtons);
+                buttons.push(button);
             }
         }
         return Promise.resolve(buttons);
@@ -70,66 +80,4 @@ export class MergeActionContributor extends AbstractIdentifiableContribution
         Promise<Action[]> {
         return Promise.resolve([]);
     }
-
-    private mergePRActions(pr: graphql.PullRequestToPullRequestLifecycle.PullRequest,
-                           repo: graphql.PullRequestFields.Repo): Action[] {
-        const buttons: Action[] = [];
-        const mergeMethods: any = {
-            merge: undefined,
-            squash: undefined,
-            rebase: undefined,
-        };
-        const title = `Merge pull request #${pr.number} from ${pr.repo.owner}/${pr.repo.name}`;
-        const message = pr.title;
-        if (repo.allowMergeCommit === true) {
-            mergeMethods.merge = {
-                method: "Merge",
-                title,
-                message,
-            };
-        }
-        if (repo.allowSquashMerge === true && !isGenerated(pr)) {
-            mergeMethods.squash = {
-                method: "Squash and Merge",
-                title: `${pr.head.message} (#${pr.number})`,
-                message: `${pr.title}\n\n${pr.commits.map(c => `* ${c.message}`).join("\n")}`,
-            };
-        }
-        if (repo.allowRebaseMerge === true && !isGenerated(pr)) {
-            mergeMethods.rebase = {
-                method: "Rebase and Merge",
-                title,
-                message,
-            };
-        }
-        if (!repo.allowMergeCommit
-            && !repo.allowSquashMerge
-            && !repo.allowRebaseMerge) {
-            mergeMethods.merge = {
-                method: "Merge",
-                title,
-                message,
-            };
-        }
-
-        _.forIn(mergeMethods, (v, k) => {
-            if (v) {
-                buttons.push(buttonForCommand(
-                    { text: v.method, role: "global" },
-                    "MergeGitHubPullRequest",
-                    {
-                        issue: pr.number,
-                        repo: repo.name,
-                        owner: repo.owner,
-                        title: v.title,
-                        message: v.message,
-                        mergeMethod: k,
-                        sha: pr.head.sha,
-                    }));
-            }
-        });
-
-        return buttons;
-    }
-
 }
