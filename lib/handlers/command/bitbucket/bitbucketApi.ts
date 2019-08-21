@@ -171,6 +171,7 @@ class BitbucketApiImpl implements BitbucketApi {
         };
         return this.httpClient.exchange(urlPattern, {
             method: HttpMethod.Post,
+            body,
             headers: {
                 Authorization: `Basic ${this.getBase64AuthHeaderValue(this.apiOptions.auth)}`,
             },
